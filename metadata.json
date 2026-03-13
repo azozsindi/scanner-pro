@@ -1,0 +1,5 @@
+{
+  "name": "Inventory Scanner",
+  "description": "A professional inventory management tool that scans barcodes and automatically tallies item counts.",
+  "requestFramePermissions": ["camera"]
+}
