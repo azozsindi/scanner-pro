@@ -46,6 +46,8 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [manualCode, setManualCode] = useState('');
+  const [manualQuantity, setManualQuantity] = useState(1);
+  const [toasts, setToasts] = useState<{ id: number, message: string, type: 'success' | 'info' }[]>([]);
   const [lastScanTime, setLastScanTime] = useState(0);
   const [cameras, setCameras] = useState<{ id: string, label: string }[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(localStorage.getItem('preferred_camera_id'));
@@ -58,7 +60,7 @@ export default function App() {
       soundType: 'beep',
       vibrationEnabled: true,
       autoStopEnabled: false,
-      scanDelay: 1500,
+      scanDelay: 1000,
       theme: 'indigo',
       fontSize: 'medium',
       compactMode: false,
@@ -136,6 +138,14 @@ export default function App() {
     localStorage.setItem('inventory_settings', JSON.stringify(settings));
   }, [settings]);
 
+  const addToast = (message: string, type: 'success' | 'info' = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  };
+
   // Sound effect function
   const playBeep = () => {
     if (!settings.soundEnabled) return;
@@ -182,32 +192,49 @@ export default function App() {
       const config = { 
         fps: 15, 
         qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
+        // Removing strict aspectRatio to avoid OverconstrainedError on some devices
       };
 
-      const cameraConfig = selectedCameraId 
+      const startCamera = async (camConfig: any) => {
+        try {
+          await html5QrCode.start(
+            camConfig, 
+            config,
+            onScanSuccess,
+            onScanFailure
+          );
+          
+          // Check for flash support
+          try {
+            const capabilities = html5QrCode.getRunningTrackCapabilities() as any;
+            if (capabilities.torch) {
+              setHasFlash(true);
+            }
+          } catch (e) {
+            console.log("Flash not supported or error checking", e);
+          }
+        } catch (err: any) {
+          console.error("Unable to start scanning with config", camConfig, err);
+          
+          // If the specific camera failed with OverconstrainedError, try a fallback
+          if (selectedCameraId && camConfig.deviceId) {
+            console.warn("Retrying with default environment camera...");
+            startCamera({ facingMode: "environment" });
+          } else if (camConfig.facingMode === "environment") {
+            console.warn("Retrying with any available camera...");
+            startCamera({}); // Try any camera
+          } else {
+            setIsScanning(false);
+            addToast('عذراً، تعذر تشغيل الكاميرا. تأكد من منح الصلاحيات.', 'info');
+          }
+        }
+      };
+
+      const initialCameraConfig = selectedCameraId 
         ? { deviceId: { exact: selectedCameraId } }
         : { facingMode: "environment" };
 
-      html5QrCode.start(
-        cameraConfig, 
-        config,
-        onScanSuccess,
-        onScanFailure
-      ).then(() => {
-        // Check for flash support
-        try {
-          const capabilities = html5QrCode.getRunningTrackCapabilities() as any;
-          if (capabilities.torch) {
-            setHasFlash(true);
-          }
-        } catch (e) {
-          console.log("Flash not supported or error checking", e);
-        }
-      }).catch(err => {
-        console.error("Unable to start scanning", err);
-        setIsScanning(false);
-      });
+      startCamera(initialCameraConfig);
 
       scannerRef.current = html5QrCode;
     }
@@ -259,6 +286,7 @@ export default function App() {
     setScanHistory(prev => [decodedText, ...prev].slice(0, 5));
     playBeep();
     triggerVibration();
+    addToast(`تم مسح الكود: ${decodedText}`);
 
     if (settings.autoStopEnabled) {
       setIsScanning(false);
@@ -270,14 +298,14 @@ export default function App() {
     // console.warn(`Code scan error = ${error}`);
   }
 
-  const handleScan = (code: string) => {
+  const handleScan = (code: string, quantity: number = 1) => {
     setInventory(prev => {
       const existing = prev[code];
       return {
         ...prev,
         [code]: {
           code,
-          count: existing ? existing.count + 1 : 1,
+          count: existing ? existing.count + quantity : quantity,
           timestamp: Date.now()
         }
       };
@@ -287,11 +315,13 @@ export default function App() {
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualCode.trim()) return;
-    handleScan(manualCode.trim());
+    handleScan(manualCode.trim(), manualQuantity);
     setLastScanned(manualCode.trim());
     setScanHistory(prev => [manualCode.trim(), ...prev].slice(0, 5));
     playBeep();
+    addToast(`تم إضافة ${manualQuantity} من ${manualCode.trim()}`);
     setManualCode('');
+    setManualQuantity(1);
   };
 
   const updateCount = (code: string, delta: number) => {
@@ -350,6 +380,7 @@ export default function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    addToast('تم تصدير ملف CSV بنجاح', 'info');
   };
 
   const exportJSON = () => {
@@ -361,6 +392,7 @@ export default function App() {
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
+    addToast('تم تصدير ملف JSON بنجاح', 'info');
   };
 
   const importJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -374,7 +406,7 @@ export default function App() {
         const importedData = JSON.parse(content);
         if (window.confirm('سيؤدي هذا إلى استبدال بياناتك الحالية. هل أنت متأكد؟')) {
           setInventory(importedData);
-          alert('تم استيراد البيانات بنجاح!');
+          addToast('تم استيراد البيانات بنجاح');
         }
       } catch (err) {
         alert('خطأ في قراءة الملف. تأكد من أنه ملف JSON صالح.');
@@ -388,6 +420,7 @@ export default function App() {
       setInventory({});
       setScanHistory([]);
       setLastScanned(null);
+      addToast('تم مسح جميع البيانات', 'info');
     }
   };
 
@@ -480,30 +513,37 @@ export default function App() {
               <div id="reader" className="w-full h-full"></div>
               
               {!isScanning && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/40 backdrop-blur-[2px] transition-all duration-500">
-                  <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsScanning(true)}
-                    className={clsx("px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl transition-all flex items-center gap-3", currentAccent)}
-                  >
-                    <Scan className="w-5 h-5" />
-                    بدء المسح
-                  </motion.button>
-                  <p className="mt-4 text-white/60 text-[10px] font-bold uppercase tracking-widest">استخدم الكاميرا الخلفية للجرد</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-[2px] transition-all duration-500">
+                  <Scan className="w-12 h-12 text-white/20 mb-2" />
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">الكاميرا متوقفة</p>
                 </div>
               )}
+            </div>
 
-              {isScanning && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full px-4">
-                  <motion.button 
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setIsScanning(false)}
-                    className="w-full py-3 bg-slate-900/80 backdrop-blur-md text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all border border-white/10"
-                  >
-                    إيقاف الماسح
-                  </motion.button>
-                </div>
+            <div className="flex flex-col gap-3">
+              {!isScanning ? (
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsScanning(true)}
+                  className={clsx("w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg transition-all flex items-center justify-center gap-3", currentAccent)}
+                >
+                  <Scan className="w-5 h-5" />
+                  تشغيل الماسح
+                </motion.button>
+              ) : (
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsScanning(false)}
+                  className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-3"
+                >
+                  <X className="w-5 h-5" />
+                  إيقاف الماسح
+                </motion.button>
+              )}
+              {!isScanning && (
+                <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">استخدم الكاميرا الخلفية للجرد السريع</p>
               )}
             </div>
 
@@ -520,6 +560,17 @@ export default function App() {
                     onChange={(e) => setManualCode(e.target.value)}
                     className={clsx(
                       "flex-1 px-4 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all", 
+                      settings.darkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900",
+                      currentRing
+                    )}
+                  />
+                  <input 
+                    type="number"
+                    min="1"
+                    value={manualQuantity}
+                    onChange={(e) => setManualQuantity(parseInt(e.target.value) || 1)}
+                    className={clsx(
+                      "w-20 px-4 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all", 
                       settings.darkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900",
                       currentRing
                     )}
@@ -749,6 +800,29 @@ export default function App() {
           </div>
         </motion.div>
       </main>
+
+      {/* Toasts */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none">
+        <AnimatePresence>
+          {toasts.map(toast => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className={clsx(
+                "px-4 py-2 rounded-full shadow-lg text-xs font-bold flex items-center gap-2 backdrop-blur-md border",
+                toast.type === 'success' 
+                  ? "bg-emerald-500/90 text-white border-emerald-400/30" 
+                  : "bg-indigo-500/90 text-white border-indigo-400/30"
+              )}
+            >
+              {toast.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Info className="w-3.5 h-3.5" />}
+              {toast.message}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       {/* Settings Modal */}
       <AnimatePresence>
