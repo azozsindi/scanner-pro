@@ -26,7 +26,8 @@ import {
   Type as TypeIcon,
   LayoutGrid,
   Smartphone,
-  Zap
+  Zap,
+  Keyboard
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -54,6 +55,9 @@ export default function App() {
   const [selectedCameraId, setSelectedCameraId] = useState<string | null>(localStorage.getItem('preferred_camera_id'));
   const [hasFlash, setHasFlash] = useState(false);
   const [isFlashOn, setIsFlashOn] = useState(false);
+  const [isWiredMode, setIsWiredMode] = useState(false);
+  const wiredBufferRef = useRef('');
+  const lastKeyTimeRef = useRef(0);
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem('inventory_settings');
     return saved ? JSON.parse(saved) : { 
@@ -69,6 +73,39 @@ export default function App() {
     };
   });
   const scannerRef = useRef<Html5Qrcode | null>(null);
+
+  // Wired Scanner Logic
+  useEffect(() => {
+    if (!isWiredMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      const now = Date.now();
+      // If delay between keys is too long, it's probably not a scanner (usually < 50ms)
+      if (now - lastKeyTimeRef.current > 100) {
+        wiredBufferRef.current = '';
+      }
+      lastKeyTimeRef.current = now;
+
+      if (e.key === 'Enter') {
+        if (wiredBufferRef.current.length > 0) {
+          handleScan(wiredBufferRef.current);
+          wiredBufferRef.current = '';
+          e.preventDefault();
+        }
+      } else if (e.key.length === 1) {
+        wiredBufferRef.current += e.key;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isWiredMode]);
 
   // Fetch cameras on mount
   useEffect(() => {
@@ -299,7 +336,7 @@ export default function App() {
     // console.warn(`Code scan error = ${error}`);
   }
 
-  const handleScan = (code: string, quantity: number = 1) => {
+  function handleScan(code: string, quantity: number = 1) {
     setInventory(prev => {
       const existing = prev[code];
       return {
@@ -311,7 +348,7 @@ export default function App() {
         }
       };
     });
-  };
+  }
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -489,6 +526,24 @@ export default function App() {
                 منطقة المسح
               </h2>
               <div className="flex items-center gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    setIsWiredMode(!isWiredMode);
+                    if (!isWiredMode) {
+                      addToast('تم تفعيل وضع الماسح السلكي. يمكنك المسح الآن.', 'info');
+                    }
+                  }}
+                  className={clsx(
+                    "p-2 rounded-lg transition-all flex items-center gap-2",
+                    isWiredMode ? clsx("text-white", currentAccent) : "bg-slate-100 text-slate-400"
+                  )}
+                  title="وضع الماسح السلكي"
+                >
+                  <Keyboard className="w-4 h-4" />
+                  {isWiredMode && <span className="text-[10px] font-bold uppercase tracking-widest">سلكي</span>}
+                </motion.button>
+
                 {hasFlash && isScanning && (
                   <motion.button
                     whileTap={{ scale: 0.9 }}
@@ -515,8 +570,18 @@ export default function App() {
               
               {!isScanning && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-[2px] transition-all duration-500">
-                  <Scan className="w-12 h-12 text-white/20 mb-2" />
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">الكاميرا متوقفة</p>
+                  {isWiredMode ? (
+                    <>
+                      <Keyboard className="w-12 h-12 text-white/40 mb-2 animate-bounce" />
+                      <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">وضع الماسح السلكي نشط</p>
+                      <p className="text-white/30 text-[8px] uppercase tracking-tighter mt-1">قم بمسح الباركود الآن</p>
+                    </>
+                  ) : (
+                    <>
+                      <Scan className="w-12 h-12 text-white/20 mb-2" />
+                      <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">الكاميرا متوقفة</p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -567,7 +632,10 @@ export default function App() {
             <div className={clsx("pt-4 border-t", settings.darkMode ? "border-slate-800" : "border-slate-100")}>
               <form onSubmit={handleManualSubmit} className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <h2 className="font-bold text-[10px] uppercase tracking-wider text-slate-400">إدخال يدوي</h2>
+                  <h2 className="font-bold text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                    إدخال يدوي أو ماسح سلكي
+                    <Keyboard className="w-3 h-3" />
+                  </h2>
                 </div>
                 <div className="flex gap-2">
                   <input 
