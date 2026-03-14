@@ -86,9 +86,6 @@ export const translations = {
     lbl_enable_anim: "تفعيل الحركات التفاعلية:",
     btn_reset_app: "إعادة ضبط المصنع (مسح شامل)",
     reset_confirm: "هل أنت متأكد؟ سيتم حذف كافة البيانات والإعدادات والسجلات نهائياً ولا يمكن التراجع!",
-    admin_cloud: "☁️ إعدادات السحابة (جوجل شيت)",
-    lbl_sheet_url: "رابط Google Sheet (الرئيسي):",
-    lbl_stock_sheet_url: "رابط Google Sheet (الجرد):",
     updates_html: `
         <p style="margin-top:0; font-weight:bold; color:var(--primary);">أهلاً بك، إليك أبرز التحديثات الأخيرة (مارس 2026):</p>
         <ul style="padding-inline-start:15px; margin:0; list-style-type:none;">
@@ -183,9 +180,6 @@ export const translations = {
     lbl_enable_anim: "Enable Animations:",
     btn_reset_app: "Reset Application (Wipe All)",
     reset_confirm: "Are you sure? This will delete ALL data, settings, and logs forever! This cannot be undone.",
-    admin_cloud: "☁️ Cloud Settings (Google Sheets)",
-    lbl_sheet_url: "Google Sheet URL (Main):",
-    lbl_stock_sheet_url: "Google Sheet URL (STOCK):",
     updates_html: `
         <p style="margin-top:0; font-weight:bold; color:var(--primary);">Welcome, here are the latest updates (March 2026):</p>
         <ul style="padding-inline-start:15px; margin:0; list-style-type:none;">

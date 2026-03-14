@@ -126,8 +126,8 @@ export function useInventory() {
     if (!item) return false;
 
     const url = (targetSheet === STOCK_SHEET_NAME) 
-      ? (config.stockSheetUrl || config.sheetUrl) 
-      : config.sheetUrl;
+      ? (STOCK_SHEET_URL || SHEET_URL) 
+      : SHEET_URL;
 
     if (!url) {
       toast.error(lang === 'ar' ? 'رابط Google Sheet غير مضبوط' : 'Google Sheet URL not configured');
@@ -173,8 +173,8 @@ export function useInventory() {
     const loadingToast = toast.loading(translations[lang].sending);
     let successCount = 0;
     const url = (targetSheet === STOCK_SHEET_NAME) 
-      ? (config.stockSheetUrl || config.sheetUrl) 
-      : config.sheetUrl;
+      ? (STOCK_SHEET_URL || SHEET_URL) 
+      : SHEET_URL;
     
     if (!url) {
       toast.error(lang === 'ar' ? 'رابط Google Sheet غير مضبوط' : 'Google Sheet URL not configured');

@@ -50,8 +50,6 @@ export interface AppConfig {
   defaultFrameCost: number;
   defaultFrameSell: number;
   enableAnimations: boolean;
-  sheetUrl: string;
-  stockSheetUrl: string;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -81,10 +79,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   defaultFrameCost: 0,
   defaultFrameSell: 0,
   enableAnimations: true,
-  sheetUrl: "https://script.google.com/macros/s/AKfycbxzhlof0PXczSN2pwNoJ_SVsY5CpO1gMIe3r-lykS-u8ytMcHkndzwWkKmKONU0lHup/exec",
-  stockSheetUrl: "",
 };
 
-export const SHEET_URL = "https://script.google.com/macros/s/AKfycbxzhlof0PXczSN2pwNoJ_SVsY5CpO1gMIe3r-lykS-u8ytMcHkndzwWkKmKONU0lHup/exec";
+export const SHEET_URL = "https://script.google.com/macros/s/AKfycbx8kUBUwHC_oTer-Wr0EV1vXSMHB8Zo6y8CjjCU990kTRxsL5ZjdOjyvvQlX7B6pKHl6w/exec";
 export const STOCK_SHEET_URL = ""; // User can fill this in .env or here
 export const STOCK_SHEET_NAME = "STOCK";

@@ -625,32 +625,6 @@ export function AdminPage() {
       </div>
 
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-        <h2 className="text-lg font-bold text-blue-800 dark:text-blue-400 mb-4 border-s-4 border-blue-800 ps-3">{t.admin_cloud}</h2>
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500">{t.lbl_sheet_url}</label>
-            <input 
-              type="text"
-              value={config.sheetUrl}
-              onChange={(e) => setConfig(prev => ({ ...prev, sheetUrl: e.target.value }))}
-              placeholder="https://script.google.com/macros/s/.../exec"
-              className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 text-slate-900 dark:text-white text-xs font-mono"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500">{t.lbl_stock_sheet_url}</label>
-            <input 
-              type="text"
-              value={config.stockSheetUrl}
-              onChange={(e) => setConfig(prev => ({ ...prev, stockSheetUrl: e.target.value }))}
-              placeholder={lang === 'ar' ? "اختياري: اتركه فارغاً لاستخدام الرابط الرئيسي" : "Optional: Leave empty to use main URL"}
-              className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 text-slate-900 dark:text-white text-xs font-mono"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
         <h2 className="text-lg font-bold text-blue-800 dark:text-blue-400 mb-4 border-s-4 border-blue-800 ps-3">{t.admin_backup}</h2>
         <div className="grid grid-cols-1 gap-3">
           <button 
