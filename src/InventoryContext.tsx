@@ -148,7 +148,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           cost: item.cost || 0,
           sell: item.sell || 0,
           date: item.date,
-          sheetName: targetSheet || item.source || (item.type === 'frame' ? "Frames" : "Lenses")
+          sheetName: targetSheet || item.source || (item.type === 'frame' ? "Frames" : "Lenses") || "General"
         })
       });
       addAuditEntry('SEND_TO_SHEET', `Sent ${item.sku} to cloud (${targetSheet || item.source || (item.type === 'frame' ? "Frames" : "Lenses")})`);
@@ -189,7 +189,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
             cost: item.cost || 0,
             sell: item.sell || 0,
             date: item.date,
-            sheetName: targetSheet || item.source || (item.type === 'frame' ? "Frames" : "Lenses")
+            sheetName: targetSheet || item.source || (item.type === 'frame' ? "Frames" : "Lenses") || "General"
           })
         });
         successCount++;
