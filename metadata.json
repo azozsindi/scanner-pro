@@ -1,5 +1,5 @@
 {
-  "name": "Inventory Scanner",
-  "description": "A professional inventory management tool that scans barcodes and automatically tallies item counts.",
+  "name": "Noor Glass Inventory System",
+  "description": "نظام شامل لإدارة مخزون العدسات والفريمات - عبد العزيز سندي",
   "requestFramePermissions": ["camera"]
 }
