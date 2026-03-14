@@ -25,7 +25,8 @@ import {
   Palette,
   Type as TypeIcon,
   LayoutGrid,
-  Smartphone
+  Smartphone,
+  Zap
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -497,7 +498,7 @@ export default function App() {
                       isFlashOn ? "bg-yellow-400 text-slate-900" : "bg-slate-800 text-white"
                     )}
                   >
-                    <Smartphone className="w-4 h-4" />
+                    <Zap className={clsx("w-4 h-4", isFlashOn && "fill-current")} />
                   </motion.button>
                 )}
                 {isScanning && (
@@ -532,15 +533,31 @@ export default function App() {
                   تشغيل الماسح
                 </motion.button>
               ) : (
-                <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setIsScanning(false)}
-                  className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-3"
-                >
-                  <X className="w-5 h-5" />
-                  إيقاف الماسح
-                </motion.button>
+                <div className="flex gap-2">
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setIsScanning(false)}
+                    className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-3"
+                  >
+                    <X className="w-5 h-5" />
+                    إيقاف الماسح
+                  </motion.button>
+                  
+                  {hasFlash && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={toggleFlash}
+                      className={clsx(
+                        "px-6 py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center",
+                        isFlashOn ? "bg-yellow-400 text-slate-900" : "bg-slate-800 text-white"
+                      )}
+                    >
+                      <Zap className={clsx("w-5 h-5", isFlashOn && "fill-current")} />
+                    </motion.button>
+                  )}
+                </div>
               )}
               {!isScanning && (
                 <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">استخدم الكاميرا الخلفية للجرد السريع</p>
