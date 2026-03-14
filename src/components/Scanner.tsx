@@ -30,6 +30,14 @@ export function Scanner({ onScan, label, autoStart = false }: ScannerProps) {
       isScanningRef.current = true;
       // Wait for DOM to update
       setTimeout(async () => {
+        const element = document.getElementById(containerId);
+        if (!element) {
+          console.error("Scanner container not found");
+          setIsScanning(false);
+          isScanningRef.current = false;
+          return;
+        }
+
         const scanner = new Html5Qrcode(containerId);
         scannerRef.current = scanner;
         try {
@@ -44,7 +52,7 @@ export function Scanner({ onScan, label, autoStart = false }: ScannerProps) {
               
               if (scannerRef.current) {
                 scannerRef.current.stop().then(() => {
-                  scannerRef.current?.clear();
+                  try { scannerRef.current?.clear(); } catch(e) {}
                   setIsScanning(false);
                 }).catch(err => {
                   console.error("Async stop error:", err);
@@ -60,20 +68,23 @@ export function Scanner({ onScan, label, autoStart = false }: ScannerProps) {
           setIsScanning(false);
           isScanningRef.current = false;
         }
-      }, 100);
+      }, 200);
     }
   };
 
   const stopScanner = async () => {
-    if (scannerRef.current && isScanningRef.current) {
+    if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
+        try { scannerRef.current.clear(); } catch(e) {}
       } catch (err) {
         console.error("Stop scanner error:", err);
       } finally {
         setIsScanning(false);
         isScanningRef.current = false;
+        scannerRef.current = null;
       }
     }
   };

@@ -9,6 +9,7 @@ import { translations } from '../i18n';
 import * as XLSX from 'xlsx';
 import { Trash2, Send, FileSpreadsheet, Search as SearchIcon, Printer, Eraser, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 
 import { soundService } from '../services/soundService';
 
@@ -27,7 +28,7 @@ export function RecordsPage() {
   };
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<'all' | 'lens' | 'frame'>('all');
+  const [activeTab, setActiveTab] = useState<'Lenses' | 'Frames' | 'STOCK'>('Lenses');
   const [showScrollButtons, setShowScrollButtons] = useState(false);
 
   React.useEffect(() => {
@@ -50,25 +51,43 @@ export function RecordsPage() {
 
   const filteredInventory = inventory.filter(item => {
     const matchesSearch = item.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || item.type === filterType;
-    return matchesSearch && matchesFilter;
+    const matchesTab = item.source === activeTab;
+    return matchesSearch && matchesTab;
   });
 
   const handleExportExcel = () => {
     soundService.playClick();
-    if (inventory.length === 0) return;
-    const data = inventory.map(item => ({
+    if (filteredInventory.length === 0) return;
+    const data = filteredInventory.map(item => ({
       "SKU": item.sku,
       "Quantity": item.qty,
       "Type": item.type === 'lens' ? 'عدسة' : 'فريم',
+      "Source": item.source,
       "Cost Price": item.cost || 0,
       "Selling Price": item.sell || 0,
       "Date": item.date
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Inventory");
-    XLSX.writeFile(wb, `NoorGlass_Inventory_${new Date().toLocaleDateString()}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, activeTab);
+    XLSX.writeFile(wb, `NoorGlass_${activeTab}_${new Date().toLocaleDateString()}.xlsx`);
+  };
+
+  const handleSendAllFiltered = async () => {
+    if (filteredInventory.length === 0) return;
+    
+    const loadingToast = toast.loading(translations[lang].sending);
+    let successCount = 0;
+    
+    for (const item of filteredInventory) {
+      const success = await sendToSheet(item.id);
+      if (success) successCount++;
+    }
+    
+    toast.dismiss(loadingToast);
+    if (successCount > 0) {
+      toast.success(`${successCount} ${translations[lang].saved_sent}`);
+    }
   };
 
   const handlePrintLabel = (item: any) => {
@@ -153,17 +172,17 @@ export function RecordsPage() {
               />
             </div>
             <div className="flex gap-2">
-              {(['all', 'lens', 'frame'] as const).map(type => (
+              {(['Lenses', 'Frames', 'STOCK'] as const).map(tab => (
                 <button
-                  key={type}
-                  onClick={() => setFilterType(type)}
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${
-                    filterType === type 
+                    activeTab === tab 
                       ? 'bg-blue-800 border-blue-800 text-white' 
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500'
                   }`}
                 >
-                  {type === 'all' ? t.filter_all : type === 'lens' ? t.filter_lens : t.filter_frame}
+                  {tab === 'Lenses' ? t.filter_lens : tab === 'Frames' ? t.filter_frame : t.nav_inventory}
                 </button>
               ))}
             </div>
@@ -191,6 +210,12 @@ export function RecordsPage() {
                             ? (config.lensTypes.find(lt => item.sku.startsWith(lt.value))?.[lang === 'ar' ? 'labelAr' : 'labelEn'] || t.filter_lens)
                             : t.filter_frame}
                         </span>
+                        {item.source && (
+                          <>
+                            <span>•</span>
+                            <span className="text-blue-600 dark:text-blue-400">{item.source}</span>
+                          </>
+                        )}
                         <span>•</span>
                         <span className="text-emerald-700 dark:text-emerald-400">Sell: {item.sell} {config.currency}</span>
                       </div>
@@ -257,12 +282,12 @@ export function RecordsPage() {
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
         <div className="flex flex-col gap-3">
           <button 
-            onClick={() => showConfirm(lang === 'ar' ? 'هل أنت متأكد من إرسال وحذف كافة السجلات؟' : 'Are you sure you want to send and delete all records?', sendAllToSheet)}
-            disabled={inventory.length === 0}
-            className={`w-full py-4 text-white rounded-xl font-black flex items-center justify-center gap-2 active:scale-95 transition-transform ${inventory.length === 0 ? 'bg-slate-400 opacity-50 cursor-not-allowed' : 'bg-emerald-600'}`}
+            onClick={() => showConfirm(lang === 'ar' ? `هل أنت متأكد من إرسال وحذف كافة سجلات ${activeTab === 'Lenses' ? 'العدسات' : activeTab === 'Frames' ? 'الإطارات' : 'الجرد'}؟` : `Are you sure you want to send and delete all ${activeTab} records?`, handleSendAllFiltered)}
+            disabled={filteredInventory.length === 0}
+            className={`w-full py-4 text-white rounded-xl font-black flex items-center justify-center gap-2 active:scale-95 transition-transform ${filteredInventory.length === 0 ? 'bg-slate-400 opacity-50 cursor-not-allowed' : 'bg-emerald-600'}`}
           >
             <Send size={20} />
-            {t.btn_send_all}
+            {lang === 'ar' ? `إرسال وحذف ${activeTab === 'Lenses' ? 'العدسات' : activeTab === 'Frames' ? 'الإطارات' : 'الجرد'}` : `Send & Delete ${activeTab}`}
           </button>
           <div className="flex gap-3">
             <button 

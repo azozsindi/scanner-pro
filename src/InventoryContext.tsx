@@ -148,10 +148,10 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           cost: item.cost || 0,
           sell: item.sell || 0,
           date: item.date,
-          sheetName: targetSheet || (item.type === 'frame' ? "Frames" : "Lenses")
+          sheetName: targetSheet || item.source || (item.type === 'frame' ? "Frames" : "Lenses")
         })
       });
-      addAuditEntry('SEND_TO_SHEET', `Sent ${item.sku} to cloud (${targetSheet || (item.type === 'frame' ? "Frames" : "Lenses")})`);
+      addAuditEntry('SEND_TO_SHEET', `Sent ${item.sku} to cloud (${targetSheet || item.source || (item.type === 'frame' ? "Frames" : "Lenses")})`);
       toast.success(translations[lang].saved_sent);
       deleteItem(id, true);
       return true;
@@ -189,7 +189,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
             cost: item.cost || 0,
             sell: item.sell || 0,
             date: item.date,
-            sheetName: targetSheet || (item.type === 'frame' ? "Frames" : "Lenses")
+            sheetName: targetSheet || item.source || (item.type === 'frame' ? "Frames" : "Lenses")
           })
         });
         successCount++;

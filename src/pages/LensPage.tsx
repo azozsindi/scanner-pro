@@ -55,6 +55,7 @@ export function LensPage() {
       sku,
       qty,
       type: 'lens',
+      source: 'Lenses',
       cost: cost || 0,
       sell: sell || 0
     });

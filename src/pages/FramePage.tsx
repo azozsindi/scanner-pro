@@ -38,6 +38,7 @@ export function FramePage() {
       sku,
       qty,
       type: 'frame',
+      source: 'Frames',
       cost: cost || 0,
       sell: sell || 0
     });

@@ -10,6 +10,7 @@ export interface InventoryItem {
   sku: string;
   qty: number;
   type: ItemType;
+  source?: 'Lenses' | 'Frames' | 'STOCK';
   cost: string | number;
   sell: string | number;
   date: string;
@@ -81,6 +82,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   enableAnimations: true,
 };
 
-export const SHEET_URL = "https://script.google.com/macros/s/AKfycbx8kUBUwHC_oTer-Wr0EV1vXSMHB8Zo6y8CjjCU990kTRxsL5ZjdOjyvvQlX7B6pKHl6w/exec";
+export const SHEET_URL = "https://script.google.com/macros/s/AKfycbwh1nFPNDoXHdriMJ-BPP00i69EmQpuPKPCSu7f4LG8tUe6a4i3pDkDW7STuiFgh8msWg/exec";
 export const STOCK_SHEET_URL = ""; // User can fill this in .env or here
 export const STOCK_SHEET_NAME = "STOCK";

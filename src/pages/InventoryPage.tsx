@@ -84,6 +84,7 @@ export function InventoryPage() {
         sku: scannedSku,
         qty: 1,
         type: isLens ? 'lens' : 'frame',
+        source: 'STOCK',
         cost: isLens ? config.defaultLensCost : config.defaultFrameCost,
         sell: isLens ? config.defaultLensSell : config.defaultFrameSell
       });
@@ -153,7 +154,10 @@ export function InventoryPage() {
               <Plus size={24} />
             </button>
             <button
-              onClick={() => setIsScanning(!isScanning)}
+              onClick={() => {
+                soundService.playClick();
+                setIsScanning(!isScanning);
+              }}
               className={`p-3 rounded-2xl transition-all active:scale-95 ${
                 isScanning 
                   ? 'bg-red-100 text-red-600 dark:bg-red-900/20' 
