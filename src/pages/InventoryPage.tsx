@@ -19,7 +19,7 @@ export function InventoryPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [filterType, setFilterType] = useState<'all' | 'lens' | 'frame'>('lens');
+  const [filterType, setFilterType] = useState<'all' | 'lens' | 'frame'>('all');
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualSku, setManualSku] = useState("");
@@ -196,7 +196,7 @@ export function InventoryPage() {
 
         {isScanning && (
           <div className="mt-4 overflow-hidden rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-800">
-            <Scanner onScan= {handleScan} label={t.inventory_scan_btn} autoStart={true} />
+            <Scanner onScan={handleScan} label={t.inventory_scan_btn} autoStart={true} />
           </div>
         )}
       </div>

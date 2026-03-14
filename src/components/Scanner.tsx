@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Camera, X } from 'lucide-react';
 import { soundService } from '../services/soundService';
+import { toast } from 'sonner';
 
 interface ScannerProps {
   onScan: (text: string) => void;
@@ -18,7 +19,7 @@ export function Scanner({ onScan, label, autoStart = false }: ScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const isScanningRef = useRef(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const containerId = "qr-reader-container";
+  const containerId = useRef(`qr-reader-${Math.random().toString(36).slice(2, 11)}`).current;
 
   const toggleScanner = async () => {
     soundService.playClick();
@@ -27,37 +28,39 @@ export function Scanner({ onScan, label, autoStart = false }: ScannerProps) {
     } else {
       setIsScanning(true);
       isScanningRef.current = true;
-      const scanner = new Html5Qrcode(containerId);
-      scannerRef.current = scanner;
-      try {
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          (decodedText) => {
-            if (!isScanningRef.current) return;
-            // Immediately mark as not scanning to prevent multiple triggers
-            isScanningRef.current = false;
-            soundService.playBeep();
-            onScan(decodedText);
-            
-            // Internal stop logic without the ref check since we just cleared it
-            if (scannerRef.current) {
-              scannerRef.current.stop().then(() => {
-                scannerRef.current?.clear();
-                setIsScanning(false);
-              }).catch(err => {
-                console.error("Async stop error:", err);
-                setIsScanning(false);
-              });
-            }
-          },
-          () => {}
-        );
-      } catch (err) {
-        console.error("Scanner start error:", err);
-        setIsScanning(false);
-        isScanningRef.current = false;
-      }
+      // Wait for DOM to update
+      setTimeout(async () => {
+        const scanner = new Html5Qrcode(containerId);
+        scannerRef.current = scanner;
+        try {
+          await scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            (decodedText) => {
+              if (!isScanningRef.current) return;
+              isScanningRef.current = false;
+              soundService.playBeep();
+              onScan(decodedText);
+              
+              if (scannerRef.current) {
+                scannerRef.current.stop().then(() => {
+                  scannerRef.current?.clear();
+                  setIsScanning(false);
+                }).catch(err => {
+                  console.error("Async stop error:", err);
+                  setIsScanning(false);
+                });
+              }
+            },
+            () => {}
+          );
+        } catch (err) {
+          console.error("Scanner start error:", err);
+          toast.error("فشل تشغيل الكاميرا. تأكد من إعطاء الصلاحية.");
+          setIsScanning(false);
+          isScanningRef.current = false;
+        }
+      }, 100);
     }
   };
 
